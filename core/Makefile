@@ -4799,6 +4799,9 @@ endif
 	@# Extra contents of the OTA package
 	$(hide) mkdir -p $(zip_root)/OTA
 	$(hide) cp $(INSTALLED_ANDROID_INFO_TXT_TARGET) $(zip_root)/OTA/
+ifneq ($(TARGET_SCATTERFILE),)
+	$(hide) cp $(TARGET_SCATTERFILE) $(zip_root)/OTA/scatterfile.txt
+endif
 ifeq ($(TARGET_OTA_ALLOW_NON_AB),true)
 ifneq ($(built_ota_tools),)
 	$(hide) mkdir -p $(zip_root)/OTA/bin
@@ -5344,6 +5347,24 @@ $(INTERNAL_UPDATE_PACKAGE_TARGET): $(BUILT_TARGET_FILES_PACKAGE) $(IMG_FROM_TARG
 updatepackage: $(INTERNAL_UPDATE_PACKAGE_TARGET)
 $(call dist-for-goals,updatepackage,$(INTERNAL_UPDATE_PACKAGE_TARGET))
 
+# -----------------------------------------------------------------
+# The SP Flash package
+
+name := $(TARGET_PRODUCT)-SPFlash-$(FILE_NAME_TAG)
+
+INTERNAL_SPFT_PACKAGE_TARGET := $(PRODUCT_OUT)/$(name).zip
+
+$(INTERNAL_SPFT_PACKAGE_TARGET): $(BUILT_TARGET_FILES_PACKAGE) $(IMG_FROM_TARGET_FILES)
+	$(call pretty,"Package: $@")
+	PATH=$(INTERNAL_USERIMAGES_BINARY_PATHS):$(dir $(ZIP2ZIP)):$$PATH \
+	    $(IMG_FROM_TARGET_FILES) \
+	        --additional IMAGES/VerifiedBootParams.textproto:VerifiedBootParams.textproto \
+	        --additional OTA/scatterfile.txt:scatterfile.txt \
+	        $(BUILT_TARGET_FILES_PACKAGE) $@
+
+.PHONY: spflashpackage
+spflashpackage: $(INTERNAL_SPFT_PACKAGE_TARGET)
+$(call dist-for-goals,spflashpackage,$(INTERNAL_SPFT_PACKAGE_TARGET))
 
 # -----------------------------------------------------------------
 # dalvik something
